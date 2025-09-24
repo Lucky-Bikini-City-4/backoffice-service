@@ -70,6 +70,8 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'io.github.openfeign:feign-micrometer'
 
+    implementation 'me.paulschwarz:spring-dotenv:3.0.0'
+
 }
 
 dependencyManagement {
