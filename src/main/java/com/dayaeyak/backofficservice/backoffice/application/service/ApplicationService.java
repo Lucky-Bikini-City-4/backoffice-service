@@ -18,6 +18,12 @@ import com.dayaeyak.backofficservice.backoffice.common.security.AccessContext;
 import com.dayaeyak.backofficservice.backoffice.common.security.AccessGuard;
 import com.dayaeyak.backofficservice.backoffice.common.security.Action;
 import com.dayaeyak.backofficservice.backoffice.common.security.ResourceScope;
+import com.dayaeyak.backofficservice.backoffice.kafka.ServiceTypeMapper;
+import com.dayaeyak.backofficservice.backoffice.kafka.producer.ProducerService;
+import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.BackofficeRegisterDto;
+import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.ServiceRegisterRequestDto;
+import com.dayaeyak.backofficservice.backoffice.kafka.producer.enums.ServiceType;
+import com.dayaeyak.backofficservice.backoffice.kafka.producer.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +38,7 @@ public class ApplicationService {
     private final ExhibitionServiceClient exhibitionService;
     private final RestaurantServiceClient restaurantService;
     private final PerformanceServiceClient performanceService;
+    private final ProducerService producerService;  // 카프카 프로듀서
 
 
     // 단건 조회
@@ -89,6 +96,20 @@ public class ApplicationService {
         application.setStatus(ApplicationStatus.APPROVAL_REQUESTED);
         repository.save(application);
 
+        // 관리자에게 승인 요청 알람 전송
+        BackofficeRegisterDto dto = new BackofficeRegisterDto(
+                ctx.getUserId(),
+                ServiceType.BACKOFFICE,
+                null,
+                ServiceTypeMapper.fromBusinessType(application.getBusinessType()),
+                application.getBusinessName(),
+                application.getOwner()
+        );
+
+        String topic = ServiceTypeMapper.fromBusinessType(application.getBusinessType()).name().toLowerCase();
+
+        producerService.sendBackOfficeRegister(topic, null, dto);
+
     }
 
     // 신청서 승인
@@ -104,6 +125,18 @@ public class ApplicationService {
         // 외부 서비스 호출 (RestTemplate 사용)
         registerExternalService(application, ctx);
 
+        // 신청자에게 승인 알람 전송
+        ServiceRegisterRequestDto dto = new ServiceRegisterRequestDto(
+                ctx.getUserId(),
+                ServiceType.BACKOFFICE,
+                null,
+                application.getOwner(),
+                Status.APPROVED
+        );
+
+        String topic = ServiceTypeMapper.fromBusinessType(application.getBusinessType()).name().toLowerCase();
+        producerService.sendRegisterResult(topic, null, dto);
+
         return ApplicationResponseDto.from(application);
     }
 
@@ -115,6 +148,18 @@ public class ApplicationService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
         application.reject();
         repository.save(application);
+
+        // 신청자에게 거절 알람 전송
+        ServiceRegisterRequestDto dto = new ServiceRegisterRequestDto(
+                ctx.getUserId(),
+                ServiceType.BACKOFFICE,
+                null,
+                application.getOwner(),
+                Status.DECLINED
+        );
+
+        String topic = ServiceTypeMapper.fromBusinessType(application.getBusinessType()).name().toLowerCase();
+        producerService.sendRegisterResult(topic, null, dto);
 
         return ApplicationResponseDto.from(application);
     }

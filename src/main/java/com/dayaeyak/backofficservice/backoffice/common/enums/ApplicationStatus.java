@@ -9,7 +9,7 @@ public enum ApplicationStatus {
     PENDING("대기"),
     APPROVED("승인"),
     APPROVAL_REQUESTED("승인 신청됨"),
-    REJECTED("거절");
+    REJECTED("신청서 거절");
 
     private final String description;
 }
