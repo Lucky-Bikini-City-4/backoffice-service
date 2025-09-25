@@ -2,24 +2,33 @@ package com.dayaeyak.backofficservice.backoffice.common.security;
 
 import com.dayaeyak.backofficservice.backoffice.common.exception.BusinessException;
 import com.dayaeyak.backofficservice.backoffice.common.exception.ErrorCode;
+import com.dayaeyak.backofficservice.backoffice.user.enums.UserRole;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
+import java.util.Optional;
 
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class AccessGuard {
 
-    public static void requiredPermission(Action action, AccessContext ctx, ResourceScope scope) {
-        if (ctx == null || ctx.getRole() == null) {
+    public static void requiredPermission(Action action, Long userId, UserRole role, Optional<ResourceScope> scope) {
+        if (userId == null || role == null) {
+            log.warn("[ACCESS DENIED] userId={}, role={}, action={}, reason={}", userId, role, action, "인증 정보 없음");
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "인증정보가 없습니다.");
         }
 
-        switch (ctx.getRole()) {
+        switch (role) {
             case MASTER -> checkMaster(action);
-            case SELLER -> checkSeller(action, ctx, scope);
+            case SELLER -> checkSeller(action, userId, scope);
             case NORMAL -> checkNormal(action);
-            default -> throw new BusinessException(ErrorCode.ACCESS_DENIED, "허용되지 않은 역할입니다.");
+
+            default -> {
+                log.warn("[ACCESS DENIED] userId={}, role={}, action={}, reason={}", userId, role, action, "허용되지 않은 역할");
+                throw new BusinessException(ErrorCode.ACCESS_DENIED, "허용되지 않은 역할입니다.");
+            }
         }
     }
 
@@ -29,15 +38,19 @@ public class AccessGuard {
     }
 
     // SELLER 권한 검증
-    private static void checkSeller(Action action, AccessContext ctx, ResourceScope scope) {
-        requireSeller(scope);
+    private static void checkSeller(Action action, Long userId, Optional<ResourceScope> scopeOpt) {
+        ResourceScope scope = scopeOpt.orElseThrow(() ->
+                new BusinessException(ErrorCode.INVALID_INPUT, "판매자 리소스 스코프가 필요합니다.")
+        );
 
-        if (!Objects.equals(ctx.getUserId(), scope.getSellerId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "등록된 만 접근할 수 있습니다.");
+        if (!Objects.equals(userId, scope.getSellerId())) {
+            log.warn("[ACCESS DENIED] userId={}, sellerId={}, action={}, reason={}", userId, scope.getSellerId(), action, "소유권 불일치");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "등록된 판매자만 접근할 수 있습니다.");
         }
 
-        if (action != Action.UPDATE && action != Action.CREATE) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "판매자는 수정만 가능합니다.");
+        if (action != Action.UPDATE && action != Action.CREATE && action != Action.READ) {
+            log.warn("[ACCESS DENIED] userId={}, sellerId={}, action={}, reason={}", userId, scope.getSellerId(), action, "허용되지 않은 작업");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "판매자는 직접 작성한 신청서만 생성, 수정, 조회 가능합니다.");
         }
     }
 
@@ -46,10 +59,4 @@ public class AccessGuard {
         throw new BusinessException(ErrorCode.ACCESS_DENIED, "일반 사용자는 접근이 불가합니다.");
     }
 
-    // scope 검증
-    private static void requireSeller(ResourceScope scope) {
-        if (scope == null || scope.getSellerId() == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "등록된 판매자 아이디가 필요합니다.");
-        }
-    }
 }

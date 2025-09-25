@@ -6,8 +6,11 @@ import com.dayaeyak.backofficservice.backoffice.application.dtos.ApplicationResp
 import com.dayaeyak.backofficservice.backoffice.application.dtos.ApplicationSearchDto;
 import com.dayaeyak.backofficservice.backoffice.application.service.ApplicationService;
 import com.dayaeyak.backofficservice.backoffice.common.response.ApiResponse;
-import com.dayaeyak.backofficservice.backoffice.common.security.AccessContext;
-import com.dayaeyak.backofficservice.backoffice.common.security.UserRole;
+import com.dayaeyak.backofficservice.backoffice.common.security.Action;
+import com.dayaeyak.backofficservice.backoffice.user.annotation.Authorize;
+import com.dayaeyak.backofficservice.backoffice.user.annotation.PassportHolder;
+import com.dayaeyak.backofficservice.backoffice.user.dto.Passport;
+import com.dayaeyak.backofficservice.backoffice.user.enums.UserRole;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,80 +26,82 @@ public class ApplicationController {
 
     private final ApplicationService service;
 
-    // 유저 권한 확인
-    @ModelAttribute
-    public AccessContext setAccessContext(
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-Role") String role) {
-        return AccessContext.of(userId, UserRole.of(role));
-    }
-
     // 단건 조회
+    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = true, action = Action.READ, resourceId = "id")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> getApplication(@PathVariable("id") Long id,
-                                                                              @ModelAttribute AccessContext ctx) {
-        ApplicationResponseDto dto = service.getApplication(id, ctx);
+                                                                              @PassportHolder Passport passport) {
+        ApplicationResponseDto dto = service.getApplication(id);
         return ApiResponse.success(HttpStatus.OK, "신청서 조회 성공", dto);
     }
 
-
     // 조건 기반 검색(목록)
+    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = true, action = Action.READ)
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ApplicationResponseDto>>> searchApplication(@RequestBody ApplicationSearchDto searchDto,
-                                                                                       @ModelAttribute AccessContext ctx,
+                                                                                       @PassportHolder Passport passport,
                                                                                        Pageable pageable) {
-
-        Page<ApplicationResponseDto> pageDto = service.getApplications(searchDto, ctx, pageable);
+        Page<ApplicationResponseDto> pageDto = service.getApplications(searchDto, pageable);
         return ApiResponse.success(HttpStatus.OK, "신청서 조회 성공", pageDto);
     }
 
     // 신청서 생성
+    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = false, action = Action.CREATE)
     @PostMapping
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> createApplication(@Valid @RequestBody ApplicationRequestDto dto,
-                                                                                 @ModelAttribute AccessContext ctx) {
-        ApplicationResponseDto responseDto = service.createApplication(dto, ctx);
+                                                                                 @PassportHolder Passport passport) {
+        ApplicationResponseDto responseDto = service.createApplication(dto, passport.userId());
         return ApiResponse.success(HttpStatus.OK, "신청서 생성 성공", responseDto);
     }
 
     // 신청서 수정
+    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = true, action = Action.UPDATE, resourceId = "id")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> updateApplication(@PathVariable Long id,
                                                                                  @Valid @RequestBody ApplicationRequestDto dto,
-                                                                                 @ModelAttribute AccessContext ctx) {
-        ApplicationResponseDto responseDto = service.updateApplication(id, dto, ctx);
+                                                                                 @PassportHolder Passport passport
+    ) {
+        ApplicationResponseDto responseDto = service.updateApplication(id, dto);
         return ApiResponse.success(HttpStatus.OK, "신청서 수정 성공", responseDto);
     }
 
     // 신청서 삭제
+    @Authorize(roles = {UserRole.MASTER}, checkOwner = true, action = Action.DELETE, resourceId = "id")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> deleteApplication(@PathVariable Long id,
-                                                                                 @ModelAttribute AccessContext ctx) {
-        service.deleteApplication(id, ctx);
+                                                                                 @PassportHolder Passport passport
+    ) {
+        service.deleteApplication(id);
         return ApiResponse.success(HttpStatus.OK, "신청서 삭제 성공", null);
     }
 
     // 신청서 승인 요청
+    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = true, action = Action.UPDATE, resourceId = "id")
     @PostMapping("/{id}/register")
     public ResponseEntity<ApiResponse<Void>> requestApproval(@PathVariable Long id,
-                                                             @ModelAttribute AccessContext ctx) {
-        service.requestApproval(id, ctx);
+                                                             @PassportHolder Passport passport
+    ) {
+        service.requestApproval(id, passport.userId());
         return ApiResponse.success(HttpStatus.OK, "신청 완료", null);
     }
 
     // 신청서 승인
+    @Authorize(roles = {UserRole.MASTER}, action = Action.APPROVE, resourceId = "id")
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> approve(@PathVariable Long id,
-                                                                       @ModelAttribute AccessContext ctx) {
-        ApplicationResponseDto dto = service.approveApplication(id, ctx);
+                                                                       @PassportHolder Passport passport
+    ) {
+        ApplicationResponseDto dto = service.approveApplication(id, passport.userId(), passport.role());
         return ApiResponse.success(HttpStatus.OK, "승인 완료", dto);
     }
 
     // 신청서 거절
+    @Authorize(roles = {UserRole.MASTER}, action = Action.REJECT, resourceId = "id")
     @PostMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> reject(@PathVariable Long id,
-                                                                      @ModelAttribute AccessContext ctx) {
-        ApplicationResponseDto dto = service.rejectApplication(id, ctx);
+                                                                      @PassportHolder Passport passport
+    ) {
+        ApplicationResponseDto dto = service.rejectApplication(id, passport.userId());
         return ApiResponse.success(HttpStatus.OK, "거절 완료", dto);
     }
-
 }

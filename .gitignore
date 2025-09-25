@@ -37,3 +37,5 @@ out/
 .vscode/
 
 .env
+
+!.gitlab-ci.yml

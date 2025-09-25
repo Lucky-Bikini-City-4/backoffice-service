@@ -1,5 +1,6 @@
 package com.dayaeyak.backofficservice.backoffice.common.security;
 
+import com.dayaeyak.backofficservice.backoffice.user.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
