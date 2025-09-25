@@ -14,16 +14,13 @@ import com.dayaeyak.backofficservice.backoffice.client.service.RestaurantService
 import com.dayaeyak.backofficservice.backoffice.common.enums.ApplicationStatus;
 import com.dayaeyak.backofficservice.backoffice.common.exception.BusinessException;
 import com.dayaeyak.backofficservice.backoffice.common.exception.ErrorCode;
-import com.dayaeyak.backofficservice.backoffice.common.security.AccessContext;
-import com.dayaeyak.backofficservice.backoffice.common.security.AccessGuard;
-import com.dayaeyak.backofficservice.backoffice.common.security.Action;
-import com.dayaeyak.backofficservice.backoffice.common.security.ResourceScope;
 import com.dayaeyak.backofficservice.backoffice.kafka.ServiceTypeMapper;
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.ProducerService;
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.BackofficeRegisterDto;
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.ServiceRegisterRequestDto;
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.enums.ServiceType;
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.enums.Status;
+import com.dayaeyak.backofficservice.backoffice.user.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,8 +40,8 @@ public class ApplicationService {
 
     // 단건 조회
     @Transactional
-    public ApplicationResponseDto getApplication(Long id, AccessContext ctx) {
-        AccessGuard.requiredPermission(Action.READ, ctx, ResourceScope.of(ctx.getUserId()));
+    public ApplicationResponseDto getApplication(Long id) {
+
         Application application = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
         return ApplicationResponseDto.from(application);
@@ -52,24 +49,24 @@ public class ApplicationService {
 
     // 목록 조회 사업장명, 사업주명, 사업 종류, 기간 검색
     @Transactional
-    public Page<ApplicationResponseDto> getApplications(ApplicationSearchDto searchDto, AccessContext ctx, Pageable pageable) {
-        AccessGuard.requiredPermission(Action.READ, ctx, ResourceScope.of(ctx.getUserId()));
+    public Page<ApplicationResponseDto> getApplications(ApplicationSearchDto searchDto, Pageable pageable) {
+
         return repository.searchApplication(searchDto, pageable);
     }
 
     // 신청서 생성
     @Transactional
-    public ApplicationResponseDto createApplication(ApplicationRequestDto dto, AccessContext ctx) {
-        AccessGuard.requiredPermission(Action.CREATE, ctx, ResourceScope.of(ctx.getUserId()));
-        Application application = Application.createApplication(dto, ctx.getUserId());
+    public ApplicationResponseDto createApplication(ApplicationRequestDto dto, Long userId) {
+
+        Application application = Application.createApplication(dto, userId);
         repository.save(application);
         return ApplicationResponseDto.from(application);
     }
 
     // 신청서 수정
     @Transactional
-    public ApplicationResponseDto updateApplication(Long id, ApplicationRequestDto dto, AccessContext ctx) {
-        AccessGuard.requiredPermission(Action.UPDATE, ctx, ResourceScope.of(ctx.getUserId()));
+    public ApplicationResponseDto updateApplication(Long id, ApplicationRequestDto dto) {
+
         Application application = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
         application.updateApplication(dto);
@@ -79,8 +76,8 @@ public class ApplicationService {
 
     // 신청서 삭제
     @Transactional
-    public void deleteApplication(Long id, AccessContext ctx) {
-        AccessGuard.requiredPermission(Action.DELETE, ctx, ResourceScope.of(ctx.getUserId()));
+    public void deleteApplication(Long id) {
+
         Application application = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
         repository.delete(application);
@@ -88,8 +85,8 @@ public class ApplicationService {
 
     //신청서 승인 요청
     @Transactional
-    public void requestApproval(Long id, AccessContext ctx) {
-        AccessGuard.requiredPermission(Action.UPDATE, ctx, ResourceScope.of(ctx.getUserId()));
+    public void requestApproval(Long id, Long userId) {
+
         Application application = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
 
@@ -98,7 +95,7 @@ public class ApplicationService {
 
         // 관리자에게 승인 요청 알람 전송
         BackofficeRegisterDto dto = new BackofficeRegisterDto(
-                ctx.getUserId(),
+                userId,
                 ServiceType.BACKOFFICE,
                 null,
                 ServiceTypeMapper.fromBusinessType(application.getBusinessType()),
@@ -114,8 +111,8 @@ public class ApplicationService {
 
     // 신청서 승인
     @Transactional
-    public ApplicationResponseDto approveApplication(Long id, AccessContext ctx) {
-        AccessGuard.requiredPermission(Action.APPROVE, ctx, ResourceScope.of(ctx.getUserId()));
+    public ApplicationResponseDto approveApplication(Long id, Long userId, UserRole role) {
+
         Application application = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
 
@@ -123,11 +120,11 @@ public class ApplicationService {
         repository.save(application);
 
         // 외부 서비스 호출 (RestTemplate 사용)
-        registerExternalService(application, ctx);
+        registerExternalService(application, userId, role);
 
         // 신청자에게 승인 알람 전송
         ServiceRegisterRequestDto dto = new ServiceRegisterRequestDto(
-                ctx.getUserId(),
+                userId,
                 ServiceType.BACKOFFICE,
                 null,
                 application.getOwner(),
@@ -142,16 +139,17 @@ public class ApplicationService {
 
     //신청서 거절
     @Transactional
-    public ApplicationResponseDto rejectApplication(Long id, AccessContext ctx) {
-        AccessGuard.requiredPermission(Action.REJECT, ctx, ResourceScope.of(ctx.getUserId()));
+    public ApplicationResponseDto rejectApplication(Long id, Long userId) {
+
         Application application = repository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND));
+
         application.reject();
         repository.save(application);
 
         // 신청자에게 거절 알람 전송
         ServiceRegisterRequestDto dto = new ServiceRegisterRequestDto(
-                ctx.getUserId(),
+                userId,
                 ServiceType.BACKOFFICE,
                 null,
                 application.getOwner(),
@@ -165,29 +163,29 @@ public class ApplicationService {
     }
 
     //외부 서비스 호출
-    private void registerExternalService(Application application, AccessContext ctx) {
+    private void registerExternalService(Application application, Long userId, UserRole role) {
         try {
             switch (application.getBusinessType()) {
                 case RESTAURANT:
                     restaurantService.registerRestaurant(
-                            ctx.getUserId(),
-                            ctx.getRole().name(),
+                            userId,
+                            role.name(),
                             ApplicationToRestaurantMapper.toRestaurantRequestDto(application)
                     );
                     break;
 
                 case PERFORMANCE:
                     performanceService.registerPerformance(
-                            ctx.getUserId(),
-                            ctx.getRole().name(),
+                            userId,
+                            role.name(),
                             ApplicationToPerformanceMapper.toPerformanceRequestDto(application)
                     );
                     break;
 
                 case EXHIBITION:
                     exhibitionService.registerExhibition(
-                            ctx.getUserId(),
-                            ctx.getRole().name(),
+                            userId,
+                            role.name(),
                             ApplicationToExhibitionMapper.toExhibitionRequestDto(application)
                     );
                     break;
