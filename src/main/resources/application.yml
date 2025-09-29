@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: "optional:file:.env"
   application:
     name: backoffice-service
   datasource:
@@ -9,19 +11,31 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
       format_sql: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: log-consumer-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 server:
-  port: 8081
-
-kafka:
-  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+  port: ${SERVER_PORT}
 
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_DEFAULT_ZONE}
+  instance:
+    prefer-ip-address: true
+    ip-address: ${EC2_IP} # 마이크로 서비스 ec2 IP
+    register-with-eureka: true
+    fetch-registry: true
 

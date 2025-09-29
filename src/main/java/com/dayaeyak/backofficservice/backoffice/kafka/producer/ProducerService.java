@@ -3,6 +3,7 @@ package com.dayaeyak.backofficservice.backoffice.kafka.producer;
 
 
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.BackofficeRegisterDto;
+import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.EventMessage;
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.ServiceRegisterRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -14,6 +15,7 @@ public class ProducerService {
 
     private final KafkaTemplate<String, ServiceRegisterRequestDto> kafkaTemplateSRR;
     private final KafkaTemplate<String, BackofficeRegisterDto> kafkaTemplateBOR;
+    private final KafkaTemplate<String, EventMessage> analyticsKafkaTemplate;
 
     // 음식점/공연/전시회 등록 결과 전송
     public void sendRegisterResult(String topic, String key, ServiceRegisterRequestDto dto) {
@@ -25,5 +27,8 @@ public class ProducerService {
         kafkaTemplateBOR.send(topic, key, dto);
     }
 
-
+    // 분석용 템플릿
+    public void analyticsSend(EventMessage eventMessage) {
+        analyticsKafkaTemplate.send("Analytics", eventMessage);
+    }
 }
