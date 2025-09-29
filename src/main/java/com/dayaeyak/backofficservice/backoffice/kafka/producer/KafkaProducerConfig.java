@@ -1,6 +1,7 @@
 package com.dayaeyak.backofficservice.backoffice.kafka.producer;
 
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.BackofficeRegisterDto;
+import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.EventMessage;
 import com.dayaeyak.backofficservice.backoffice.kafka.producer.dtos.ServiceRegisterRequestDto;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -56,5 +57,18 @@ public class KafkaProducerConfig {
         return new KafkaTemplate<>(producerFactoryBOR());
     }
 
+    //--------------------AnalyticsData--------------------
+    @Bean
+    public ProducerFactory<String, EventMessage> analyticsProducerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, SERVER);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
 
+    @Bean
+    public KafkaTemplate<String, EventMessage> analyticsKafkaTemplate() {
+        return new KafkaTemplate<>(analyticsProducerFactory());
+    }
 }
