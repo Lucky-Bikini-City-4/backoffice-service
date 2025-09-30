@@ -11,7 +11,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
       format_sql: true
@@ -33,9 +33,9 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_DEFAULT_ZONE}
-  instance:
-    prefer-ip-address: true
-    ip-address: ${EC2_IP} # 마이크로 서비스 ec2 IP
-    register-with-eureka: true
-    fetch-registry: true
+#  instance:
+#    prefer-ip-address: true
+#    ip-address: ${EC2_IP} # 마이크로 서비스 ec2 IP
+#    register-with-eureka: true
+#    fetch-registry: true
 

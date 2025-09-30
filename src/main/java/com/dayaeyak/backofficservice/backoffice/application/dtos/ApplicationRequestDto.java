@@ -17,6 +17,8 @@ public class ApplicationRequestDto {
 
     private String owner;
 
+    private Long sellerId;
+
     @Enumerated(EnumType.STRING)
     private BusinessType businessType;
 

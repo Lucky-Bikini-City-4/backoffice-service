@@ -63,8 +63,10 @@ public class Application {
     //생성
 
     public static Application createApplication(ApplicationRequestDto dto, Long userId) {
+        Long sellerIdToUse = (dto.getSellerId() != null) ? dto.getSellerId() : userId;
+
         return Application.builder()
-                .sellerId(userId)
+                .sellerId(sellerIdToUse)
                 .registrationNumber(dto.getRegistrationNumber())
                 .businessName(dto.getBusinessName())
                 .owner(dto.getOwner())

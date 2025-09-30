@@ -168,24 +168,18 @@ public class ApplicationService {
             switch (application.getBusinessType()) {
                 case RESTAURANT:
                     restaurantService.registerRestaurant(
-                            userId,
-                            role.name(),
                             ApplicationToRestaurantMapper.toRestaurantRequestDto(application)
                     );
                     break;
 
                 case PERFORMANCE:
                     performanceService.registerPerformance(
-                            userId,
-                            role.name(),
                             ApplicationToPerformanceMapper.toPerformanceRequestDto(application)
                     );
                     break;
 
                 case EXHIBITION:
                     exhibitionService.registerExhibition(
-                            userId,
-                            role.name(),
                             ApplicationToExhibitionMapper.toExhibitionRequestDto(application)
                     );
                     break;
