@@ -6,12 +6,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name="restaurant-service")
+@FeignClient(name="restaurant-service", url="http://localhost:10800")
 public interface RestaurantServiceClient {
     @PostMapping("/restaurants")
     void registerRestaurant(
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-Role") String role,
             @RequestBody RestaurantRequestDto dto
     );
 }

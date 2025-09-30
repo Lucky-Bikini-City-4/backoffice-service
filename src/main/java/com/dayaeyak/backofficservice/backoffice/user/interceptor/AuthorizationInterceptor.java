@@ -2,6 +2,7 @@ package com.dayaeyak.backofficservice.backoffice.user.interceptor;
 
 import com.dayaeyak.backofficservice.backoffice.user.annotation.Authorize;
 import com.dayaeyak.backofficservice.backoffice.user.dto.Passport;
+import com.dayaeyak.backofficservice.backoffice.user.enums.UserRole;
 import com.dayaeyak.backofficservice.backoffice.user.exception.CommonExceptionType;
 import com.dayaeyak.backofficservice.backoffice.user.exception.CustomRuntimeException;
 import com.dayaeyak.backofficservice.backoffice.user.service.AccessCheckService;
@@ -14,6 +15,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
 
+import java.util.Arrays;
 import java.util.Map;
 
 @Slf4j
@@ -31,10 +33,33 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
         // 2. @Authorize 어노테이션 확인
         Authorize authorize = method.getMethodAnnotation(Authorize.class);
         if (authorize == null) return true; // 어노테이션 없으면 모든 권한 허용
+        log.info("Authorize annotation = {}", authorize);
+        log.info("Authorize.roles = {}", Arrays.toString(authorize.roles()));
+        log.info("Authorize.action = {}", authorize.action());
+        log.info("Authorize.resourceId = {}", authorize.resourceId());
+        log.info("Authorize.bypass = {}", authorize.bypass());
 
-        // 3. Passport 확인 (게이트웨이에서 세팅)
-        Passport passport = (Passport) request.getAttribute("passport");
-        if (passport == null) throw new CustomRuntimeException(CommonExceptionType.INVALID_USER_ID);
+        // 3. 헤더에서 Passport 생성
+        String userIdHeader = request.getHeader("X-User-Id");
+        String userRoleHeader = request.getHeader("X-User-Role");
+
+        if (userIdHeader == null || userRoleHeader == null) {
+            log.warn("Missing X-User-Id or X-User-Role header");
+            throw new CustomRuntimeException(CommonExceptionType.INVALID_USER_ID);
+        }
+
+        Passport passport;
+        try {
+            Long userId = Long.valueOf(userIdHeader);
+            UserRole role = UserRole.valueOf(userRoleHeader.toUpperCase());
+            passport = new Passport(userId, role);
+            request.setAttribute("passport", passport); // 다른 곳에서 사용할 수 있도록
+        } catch (Exception e) {
+            log.error("Failed to parse Passport from headers", e);
+            throw new CustomRuntimeException(CommonExceptionType.INVALID_USER_ID);
+        }
+
+        log.info("authorization interceptor passport: {}", passport);
 
         // 4. bypass가 true면 모든 권한 허용
         if (authorize.bypass()) return true;
@@ -58,7 +83,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
             }
 
         }
-        // 6. 권한 체크 (objectId는 AccessCheckService 내부에서 repo 조회 후 sellerId 매핑 가능)
+//         6. 권한 체크 (objectId는 AccessCheckService 내부에서 repo 조회 후 sellerId 매핑 가능)
         accessCheckService.checkPermission(passport, authorize.action(), authorize.roles(), objectId);
 
         return true;

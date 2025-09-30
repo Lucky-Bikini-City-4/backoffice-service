@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 public interface ExhibitionServiceClient {
     @PostMapping("/internal/exhibitions")
     void registerExhibition(
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-Role") String role,
             @RequestBody ExhibitionCreateRequestDto dto
     );
 }

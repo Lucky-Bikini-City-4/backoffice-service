@@ -39,6 +39,10 @@ public class AccessGuard {
 
     // SELLER 권한 검증
     private static void checkSeller(Action action, Long userId, Optional<ResourceScope> scopeOpt) {
+        if (action == Action.CREATE) {
+            // CREATE일 때는 신규 리소스라 scope 필요 없음
+            return;
+        }
         ResourceScope scope = scopeOpt.orElseThrow(() ->
                 new BusinessException(ErrorCode.INVALID_INPUT, "판매자 리소스 스코프가 필요합니다.")
         );
@@ -48,7 +52,7 @@ public class AccessGuard {
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "등록된 판매자만 접근할 수 있습니다.");
         }
 
-        if (action != Action.UPDATE && action != Action.CREATE && action != Action.READ) {
+        if (action != Action.UPDATE && action != Action.READ) {
             log.warn("[ACCESS DENIED] userId={}, sellerId={}, action={}, reason={}", userId, scope.getSellerId(), action, "허용되지 않은 작업");
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "판매자는 직접 작성한 신청서만 생성, 수정, 조회 가능합니다.");
         }

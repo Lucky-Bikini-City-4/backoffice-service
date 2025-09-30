@@ -27,7 +27,7 @@ public class ApplicationController {
     private final ApplicationService service;
 
     // 단건 조회
-    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = true, action = Action.READ, resourceId = "id")
+    @Authorize( checkOwner = true, action = Action.READ, resourceId = "id")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> getApplication(@PathVariable("id") Long id,
                                                                               @PassportHolder Passport passport) {
@@ -36,7 +36,7 @@ public class ApplicationController {
     }
 
     // 조건 기반 검색(목록)
-    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = true, action = Action.READ)
+    @Authorize(checkOwner = true, action = Action.READ)
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ApplicationResponseDto>>> searchApplication(@RequestBody ApplicationSearchDto searchDto,
                                                                                        @PassportHolder Passport passport,
@@ -46,7 +46,7 @@ public class ApplicationController {
     }
 
     // 신청서 생성
-    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = false, action = Action.CREATE)
+    @Authorize(checkOwner = false, action = Action.CREATE)
     @PostMapping
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> createApplication(@Valid @RequestBody ApplicationRequestDto dto,
                                                                                  @PassportHolder Passport passport) {
@@ -55,7 +55,7 @@ public class ApplicationController {
     }
 
     // 신청서 수정
-    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = true, action = Action.UPDATE, resourceId = "id")
+    @Authorize(checkOwner = true, action = Action.UPDATE, resourceId = "id")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> updateApplication(@PathVariable Long id,
                                                                                  @Valid @RequestBody ApplicationRequestDto dto,
@@ -66,7 +66,7 @@ public class ApplicationController {
     }
 
     // 신청서 삭제
-    @Authorize(roles = {UserRole.MASTER}, checkOwner = true, action = Action.DELETE, resourceId = "id")
+    @Authorize(checkOwner = true, action = Action.DELETE, resourceId = "id")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> deleteApplication(@PathVariable Long id,
                                                                                  @PassportHolder Passport passport
@@ -76,7 +76,7 @@ public class ApplicationController {
     }
 
     // 신청서 승인 요청
-    @Authorize(roles = {UserRole.MASTER, UserRole.SELLER}, checkOwner = true, action = Action.UPDATE, resourceId = "id")
+    @Authorize(checkOwner = true, action = Action.UPDATE, resourceId = "id")
     @PostMapping("/{id}/register")
     public ResponseEntity<ApiResponse<Void>> requestApproval(@PathVariable Long id,
                                                              @PassportHolder Passport passport
@@ -86,7 +86,7 @@ public class ApplicationController {
     }
 
     // 신청서 승인
-    @Authorize(roles = {UserRole.MASTER}, action = Action.APPROVE, resourceId = "id")
+    @Authorize(action = Action.APPROVE, resourceId = "id")
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> approve(@PathVariable Long id,
                                                                        @PassportHolder Passport passport
@@ -96,7 +96,7 @@ public class ApplicationController {
     }
 
     // 신청서 거절
-    @Authorize(roles = {UserRole.MASTER}, action = Action.REJECT, resourceId = "id")
+    @Authorize(action = Action.REJECT, resourceId = "id")
     @PostMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<ApplicationResponseDto>> reject(@PathVariable Long id,
                                                                       @PassportHolder Passport passport

@@ -12,8 +12,6 @@ public interface PerformanceServiceClient {
 
     @PostMapping("/performances")
     void registerPerformance(
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-Role") String role,
             @RequestBody CreatePerformanceRequestDto dto
     );
 }
