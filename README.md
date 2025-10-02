@@ -8,6 +8,7 @@
 
 ---
 
+=======
 ## 목차
 - 프로젝트 소개
 - 기능 소개
@@ -74,7 +75,6 @@
 
   ![flow](./image/flow.png)
 
-
 - 신청서 상태 관리: `PENDING` → `APPROVED` / `REJECTED`
 - AdminActionLog 테이블로 승인/거절 이력 저장
 - Kafka 이벤트를 통해 각 서비스에 승인 결과 전송
@@ -114,7 +114,7 @@
   - 조치: 요청별 Lock 처리 및 DB 트랜잭션 적용, `PENDING` 상태만 승인 가능
   - 결과: 중복 승인/거절 문제 예방, 데이터 무결성 확보
 
-### 데이터베이스 선택: 백오피스(PostgreSQL) / 음식점(MySQL)
+### 데이터베이스 선택: PostgreSQL vs MySQL
 
 **요구 사항**
 - **백오피스**
