@@ -1,4 +1,4 @@
-package com.dayaeyak.backofficservice.backoffice.common.config;
+package com.dayaeyak.backofficservice.backoffice.user.config;
 
 import com.dayaeyak.backofficservice.backoffice.user.interceptor.AuthorizationInterceptor;
 import com.dayaeyak.backofficservice.backoffice.user.resolver.PassportHolderArgumentResolver;
@@ -15,7 +15,6 @@ import java.util.List;
 public class WebConfig implements WebMvcConfigurer {
 
     private final PassportHolderArgumentResolver passportHolderArgumentResolver;
-
     private final AuthorizationInterceptor authorizationInterceptor;
 
     @Override
