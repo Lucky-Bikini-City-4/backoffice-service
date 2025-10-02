@@ -1,4 +1,4 @@
-package com.dayaeyak.backofficservice.backoffice.common.config;
+package com.dayaeyak.backofficservice.backoffice.user.config;
 
 import com.dayaeyak.backofficservice.backoffice.user.interceptor.AuthorizationInterceptor;
 import com.dayaeyak.backofficservice.backoffice.user.resolver.PassportHolderArgumentResolver;
