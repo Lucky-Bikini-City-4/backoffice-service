@@ -33,9 +33,19 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_DEFAULT_ZONE}
-#  instance:
-#    prefer-ip-address: true
-#    ip-address: ${EC2_IP} # 마이크로 서비스 ec2 IP
-#    register-with-eureka: true
-#    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    ip-address: ${EC2_IP} # 마이크로 서비스 ec2 IP
+    register-with-eureka: true
+    fetch-registry: true
+    deregister-on-shutdown: true
 
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true          # Eureka 기반 자동 라우팅 활성화
+          lower-case-service-id: true
+          include-expression: true     # prefix 제거
+          filters:
+            - StripPrefix=1     # 자동 라우팅 필터 설정
