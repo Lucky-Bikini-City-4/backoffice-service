@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name="restaurant-service", url="http://localhost:10800")
+@FeignClient(name="restaurant-service")
 public interface RestaurantServiceClient {
     @PostMapping("/restaurants")
     void registerRestaurant(
